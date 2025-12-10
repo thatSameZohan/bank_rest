@@ -1,8 +1,9 @@
-package com.bank.service.impl;
+package com.bank.security;
 
 import com.bank.entity.UserEntity;
 import com.bank.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NullMarked;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

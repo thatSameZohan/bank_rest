@@ -1,5 +1,7 @@
 package com.bank.entity;
 
+import com.bank.enums.CardStatus;
+import com.bank.util.CardNumberAttributeConverter;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,12 +15,12 @@ public class CardEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Convert(converter = com.bank.entity.CardNumberAttributeConverter.class)
+    @Convert(converter = CardNumberAttributeConverter.class)
     @Column(name = "card_number_encrypted", nullable = false)
-    private String cardNumberEncrypted;
+    private String cardNumberEncrypted; // Хранится в БД в зашифрованном виде. Шифрование обеспечит JPA AttributeConverter.
 
     @Column(name = "masked_number", nullable = false)
-    private String maskedNumber;
+    private String maskedNumber; // Маскированный номер карты (**** **** **** 1234). Хранится открыто
 
     @Column(nullable = false)
     private String ownerName;

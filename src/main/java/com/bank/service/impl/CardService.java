@@ -2,30 +2,29 @@ package com.bank.service.impl;
 
 import com.bank.dto.*;
 import com.bank.entity.*;
+import com.bank.enums.CardStatus;
 import com.bank.repository.CardRepository;
-import com.bank.entity.CardNumberAttributeConverter;
 import com.bank.util.CardUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
 import java.time.LocalDate;
+
 @RequiredArgsConstructor
 @Service
 public class CardService {
 
     private final CardRepository cardRepository;
-    private final CardNumberAttributeConverter converter;
 
-    public CardResponseDto createCard(Long userId, CardCreateDto dto) {
+    @Transactional
+    public CardResponseDto createCard(CardCreateDto dto) {
+
         if (dto.expiryDate().isBefore(LocalDate.now())) {
             throw new IllegalArgumentException("Expiry date must be in the future");
         }
 
-        String encrypted = converter.convertToDatabaseColumn(dto.cardNumber());
-        if (cardRepository.existsByCardNumberEncrypted(encrypted)) {
+        if (cardRepository.existsByCardNumberEncrypted(dto.cardNumber())) {
             throw new IllegalArgumentException("Card already exists");
         }
 
@@ -35,7 +34,7 @@ public class CardService {
             .ownerName(dto.ownerName())
             .expiryDate(dto.expiryDate())
             .status(CardStatus.ACTIVE)
-            .userId(userId)
+            .userId(dto.userId())
             .balance(dto.initialBalance())
             .build();
 
@@ -43,52 +42,44 @@ public class CardService {
         return mapToDto(saved);
     }
 
-    public Page<CardResponseDto> getUserCards(Long userId, Pageable pageable, String q) {
+    public Page<CardResponseDto> getUserCards(Long userId, Pageable pageable) {
         Page<CardEntity> page = cardRepository.findAllByUserId(userId, pageable);
         return page.map(this::mapToDto);
     }
 
+    public CardResponseDto getCardForUser(Long cardId, Long userId) {
+
+        CardEntity card=cardRepository.findByIdAndUserId(cardId, userId)
+                .orElseThrow(() -> new RuntimeException("Card does not belong to user"));
+
+        return mapToDto(card);
+    }
+
     @Transactional
     public void blockCard(Long id) {
-        CardEntity c = cardRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Card not found"));
-        c.setStatus(CardStatus.BLOCKED);
-        cardRepository.save(c);
+        CardEntity card = cardRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Card not found"));
+        card.setStatus(CardStatus.BLOCKED);
+        cardRepository.save(card);
     }
 
     @Transactional
     public void activateCard(Long id) {
-        CardEntity c = cardRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Card not found"));
-        c.setStatus(CardStatus.ACTIVE);
-        cardRepository.save(c);
+        CardEntity card = cardRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Card not found"));
+        card.setStatus(CardStatus.ACTIVE);
+        cardRepository.save(card);
     }
 
     @Transactional
     public void deleteCard(Long id) {
+        if (!cardRepository.existsById(id)) {
+            throw new RuntimeException("Card not found");
+        }
         cardRepository.deleteById(id);
     }
 
-    @Transactional
-    public void transferBetweenOwnCards(Long userId, Long fromCardId, Long toCardId, BigDecimal amount) {
-        if (fromCardId.equals(toCardId)) throw new IllegalArgumentException("From and To card must differ");
-
-        CardEntity from = cardRepository.findById(fromCardId).orElseThrow(() -> new IllegalArgumentException("From card not found"));
-        CardEntity to = cardRepository.findById(toCardId).orElseThrow(() -> new IllegalArgumentException("To card not found"));
-
-        if (!from.getUserId().equals(userId) || !to.getUserId().equals(userId)) {
-            throw new SecurityException("Cards must belong to the same user");
-        }
-        if (from.getStatus() != CardStatus.ACTIVE || to.getStatus() != CardStatus.ACTIVE) {
-            throw new IllegalStateException("Both cards must be ACTIVE");
-        }
-        if (from.getBalance().compareTo(amount) < 0) {
-            throw new IllegalArgumentException("Insufficient funds");
-        }
-
-        from.setBalance(from.getBalance().subtract(amount));
-        to.setBalance(to.getBalance().add(amount));
-
-        cardRepository.save(from);
-        cardRepository.save(to);
+    public CardEntity getById(Long id) {
+        return cardRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Card not found"));
     }
 
     private CardResponseDto mapToDto(CardEntity e) {

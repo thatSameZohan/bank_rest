@@ -1,5 +1,6 @@
 package com.bank.entity;
 
+import com.bank.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 

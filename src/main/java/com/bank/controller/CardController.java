@@ -1,15 +1,16 @@
 package com.bank.controller;
 
 import com.bank.dto.*;
+import com.bank.entity.UserEntity;
 import com.bank.service.impl.CardService;
+import com.bank.service.impl.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-
-import jakarta.validation.Valid;
 
 @RequiredArgsConstructor
 @RestController
@@ -17,44 +18,50 @@ import jakarta.validation.Valid;
 public class CardController {
 
     private final CardService cardService;
-
-    @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<CardResponseDto> createCard(@RequestBody @Valid CardCreateDto dto, Authentication auth) {
-        Long adminUserId = getUserIdFromAuth(auth);
-        var res = cardService.createCard(adminUserId, dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(res);
-    }
+    private final UserService userService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','USER')")
-    public ResponseEntity<Page<CardResponseDto>> listUserCards(
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "10") int size,
-        Authentication auth
+    public Page<CardResponseDto> getMyCards(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
     ) {
-        Long userId = getUserIdFromAuth(auth);
-        Page<CardResponseDto> pageRes = cardService.getUserCards(userId, PageRequest.of(page, size), null);
-        return ResponseEntity.ok(pageRes);
+        UserEntity user = userService.getByUsername(userDetails.getUsername());
+
+        return cardService.getUserCards(user.getId(), PageRequest.of(page, size));
     }
 
-    @PostMapping("/transfer")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> transfer(@RequestBody @Valid TransferRequestDto dto, Authentication auth) {
-        Long userId = getUserIdFromAuth(auth);
-        cardService.transferBetweenOwnCards(userId, dto.fromCardId(), dto.toCardId(), dto.amount());
-        return ResponseEntity.ok("OK");
+    @GetMapping("/{id}")
+    public CardResponseDto getCard(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        UserEntity user = userService.getByUsername(userDetails.getUsername());
+        return cardService.getCardForUser(id, user.getId());
     }
 
-    @PostMapping("/{id}/block")
+    // --- ADMIN actions ---
+
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> block(@PathVariable Long id) {
-        cardService.blockCard(id);
-        return ResponseEntity.ok("blocked");
+    @PostMapping
+    public CardResponseDto createCard (@RequestBody CardCreateDto dto) {
+        userService.getById(dto.userId());
+        return cardService.createCard(dto);
     }
 
-    private Long getUserIdFromAuth(Authentication auth) {
-        // В JwtAuthenticationFilter мы устанавливаем principal = userId (String), поэтому auth.getName() возвращает id
-        return Long.parseLong(auth.getName());
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/{id}/block")
+    public void blockCard (@PathVariable Long id) {
+        cardService.blockCard(id);
+    }
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/{id}/activate")
+    public void activateCard (@PathVariable Long id) {
+        cardService.activateCard(id);
+    }
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}")
+    public void deleteCard (@PathVariable Long id) {
+        cardService.deleteCard(id);
     }
 }

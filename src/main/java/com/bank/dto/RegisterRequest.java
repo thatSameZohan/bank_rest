@@ -1,3 +1,12 @@
 package com.bank.dto;
 
-public record RegisterRequest(String username, String password, boolean isAdmin) {}
+import jakarta.validation.constraints.NotBlank;
+
+public record RegisterRequest(
+        @NotBlank
+        String username,
+
+        @NotBlank
+        String password,
+
+        boolean isAdmin) {}

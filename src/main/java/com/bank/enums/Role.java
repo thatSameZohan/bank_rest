@@ -1,4 +1,4 @@
-package com.bank.entity;
+package com.bank.enums;
 
 public enum Role {
     ROLE_USER, ROLE_ADMIN
