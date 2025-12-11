@@ -1,4 +1,3 @@
-#  - Включить Swagger UI.
 server:
   port: 8080
 spring:
@@ -9,17 +8,15 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: none #validate format_sql: true
+      ddl-auto: none
     open-in-view: false
+  liquibase:
+    change-log: db/migration/V1__create_tables.yaml
 security:
   jwt:
     secret: 98sd7g0s98g-df0h9gf9fgg7s98f6a8f7a6sf
     expiration:
       access: 600000 # 10 min
       refresh: 86400000 # 24 hours
-
 encryption:
   aes-key: A1B2C3D4E5F67890A1B4C7D2E5F97810
-
-#liquibase:
-#  change-log: classpath:db/changelog/db.changelog-master.xml

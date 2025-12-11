@@ -31,5 +31,5 @@ public class TransferEntity {
     private BigDecimal amount;
 
     @Column(nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
 }

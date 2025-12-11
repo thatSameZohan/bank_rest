@@ -7,6 +7,8 @@ public record CardResponseDto(
 
     Long id,
 
+    Long userId,
+
     String maskedNumber,
 
     String ownerName,

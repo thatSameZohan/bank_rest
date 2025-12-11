@@ -1,41 +1,58 @@
-package com.bank.controller;
+package com.bank.service.impl;
 
-import com.bank.dto.*;
+import com.bank.dto.AuthResponse;
+import com.bank.dto.LoginRequest;
+import com.bank.dto.RegisterRequest;
 import com.bank.entity.UserEntity;
+import com.bank.enums.Role;
+import com.bank.exception.CommonException;
+import com.bank.repository.UserRepository;
 import com.bank.security.JwtService;
-import com.bank.service.impl.UserService;
+import com.bank.service.UserService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.*;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.web.bind.annotation.*;
-import jakarta.validation.Valid;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+@Service
 @RequiredArgsConstructor
-@RestController
-@RequestMapping("/v1/api/auth")
-public class AuthController {
+public class UserServiceImpl implements UserService {
 
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
-    private final UserService userService;
     private final JwtService jwtService;
 
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest dto) {
-        userService.register(dto);
-        return ResponseEntity.ok("registered");
+    @Override
+    public void register(RegisterRequest request) {
+
+        if (userRepository.existsByUsername(request.username())) {
+            throw new CommonException (409, "User already exists");
+        }
+
+        var user = UserEntity.builder()
+                .username(request.username())
+                .password(passwordEncoder.encode(request.password()))
+                .role(request.isAdmin() ? Role.ROLE_ADMIN : Role.ROLE_USER)
+                .enabled(true)
+                .build();
+
+        userRepository.save(user);
     }
 
-    @PostMapping("/login")
-    public AuthResponse login (@Valid @RequestBody LoginRequest request,
-                                   HttpServletResponse response) {
+    @Override
+    public AuthResponse login(LoginRequest request, HttpServletResponse response) {
+
+        UserEntity user = getByUsername(request.username());
+
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.username(), request.password())
         );
-
-        UserEntity user = userService.getByUsername(request.username());
 
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
@@ -56,13 +73,11 @@ public class AuthController {
         return new AuthResponse(accessToken);
     }
 
-    @PostMapping("/refresh")
-    public AuthResponse refresh(
-            @CookieValue("refresh_token") String refreshToken,
-            HttpServletResponse response
-    ) {
+    @Override
+    public AuthResponse refresh(String refreshToken, HttpServletResponse response) {
+
         String username = jwtService.extractUsername(refreshToken);
-        UserEntity user = userService.getByUsername(username);
+        UserEntity user = getByUsername(username);
 
         String newAccess = jwtService.generateAccessToken(user);
         String newRefresh = jwtService.generateRefreshToken(user);
@@ -79,8 +94,8 @@ public class AuthController {
         return new AuthResponse(newAccess);
     }
 
-    @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletResponse response) {
+    @Override
+    public void logout(HttpServletResponse response) {
         // Удаляем refresh cookie
         ResponseCookie deleteCookie = ResponseCookie.from("refresh_token", "")
                 .httpOnly(true)
@@ -91,7 +106,46 @@ public class AuthController {
                 .build();
 
         response.addHeader("Set-Cookie", deleteCookie.toString());
+    }
 
-        return ResponseEntity.noContent().build();
+    @Override
+    @Transactional
+    public void deleteById(Long id) {
+
+        UserEntity user = getById(id);
+
+        if (user.getRole() == Role.ROLE_ADMIN) {
+            throw new CommonException (403, "You cannot delete the administrator");
+        }
+
+        userRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional
+        public void block(Long id) {
+        UserEntity user = getById(id);
+        user.setEnabled(false);
+        userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public void activate(Long id) {
+        UserEntity user = getById(id);
+        user.setEnabled(true);
+        userRepository.save(user);
+    }
+
+    @Override
+    public UserEntity getByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new CommonException (404, "User not found"));
+    }
+
+    @Override
+    public UserEntity getById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new CommonException (404, "User not found"));
     }
 }

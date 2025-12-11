@@ -12,7 +12,7 @@ public record CardCreateDto(
     @NotBlank
     String ownerName,
 
-    @NotBlank
+    @NotNull
     Long userId,
 
     @NotNull

@@ -1,0 +1,220 @@
+openapi: 3.1.0
+info:
+  title: Bank API
+  description: API для управления пользователями и аутентификации в банковском приложении
+  version: v1
+  contact:
+    name: Support Team
+    email: support@bank.com
+  license:
+    name: Apache 2.0
+    url: http://springdoc.org
+
+servers:
+  - url: http://localhost:8080/v1/api
+    description: Локальный сервер разработки
+
+paths:
+  /auth/register:
+    post:
+      summary: Регистрация нового пользователя
+      description: Создаёт нового пользователя в системе. Администратор может быть создан только через админ‑панель.
+      operationId: register
+      requestBody:
+        description: Данные для регистрации пользователя
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      responses:
+        '200':
+          description: Пользователь успешно зарегистрирован
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: registered
+        '409':
+          description: Пользователь с таким именем уже существует
+
+  /auth/login:
+    post:
+      summary: Авторизация пользователя
+      description: Возвращает access token в теле ответа и refresh token в HttpOnly cookie
+      operationId: login
+      requestBody:
+        description: Данные для входа
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        '200':
+          description: Успешная авторизация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Неверные логин или пароль
+
+  /auth/refresh:
+    post:
+      summary: Обновление access token
+      description: Использует refresh token из cookie для выдачи нового access token
+      operationId: refresh
+      parameters:
+        - name: refresh_token
+          in: cookie
+          description: Refresh token, переданный в cookie
+          required: true
+          schema:
+            type: string
+            example: eyJhbGciOiJIUzI1NiJ9.xxx
+      responses:
+        '200':
+          description: Новый access token выдан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid or expired refresh token
+
+  /auth/logout:
+    post:
+      summary: Выход из системы
+      description: Удаляет refresh token из cookies
+      operationId: logout
+      responses:
+        '204':
+          description: Успешный выход
+        '500':
+          description: Ошибка при удалении cookie
+
+  /users/{id}:
+    delete:
+      summary: Удаление пользователя
+      description: Только для администраторов. Нельзя удалить администратора.
+      operationId: deleteUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: ID пользователя для удаления
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 1
+      responses:
+        '200':
+          description: Пользователь удалён
+        '403':
+          description: Нельзя удалить администратора
+        '404':
+          description: Пользователь не найден
+
+  /users/{id}/block:
+    post:
+      summary: Блокировка пользователя
+      description: Деактивирует учётную запись пользователя (только для администраторов)
+      operationId: blockCard
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: ID пользователя для блокировки
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 1
+      responses:
+        '200':
+          description: Пользователь заблокирован
+        '404':
+          description: Пользователь не найден
+
+  /users/{id}/activate:
+    post:
+      summary: Активизация пользователя
+      description: Активирует учётную запись пользователя (только для администраторов)
+      operationId: activateCard
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: ID пользователя для активации
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 1
+      responses:
+        '200':
+          description: Пользователь активирован
+        '404':
+          description: Пользователь не найден
+
+components:
+  schemas:
+    RegisterRequest:
+      type: object
+      description: Данные для регистрации нового пользователя
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          description: Логин пользователя
+          example: john_doe
+        password:
+          type: string
+          description: Пароль пользователя (минимум 6 символов)
+          example: secret123
+        isAdmin:
+          type: boolean
+          description: Флаг создания администратора
+          default: false
+          example: false
+
+    LoginRequest:
+      type: object
+      description: Данные для авторизации пользователя
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          description: Логин пользователя
+          example: john_doe
+        password:
+          type: string
+          description: Пароль пользователя
+          example: secret123
+
+    AuthResponse:
+      type: object
+      description: Ответ с access token после авторизации/обновления
+      required:
+        - accessToken
+      properties:
+        accessToken:
+          type: string
+          description: JWT access token
+          example: eyJhbGciOiJIUzI1NiJ9.xxx
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Bearer token для доступа к защищённым эндпоинтам
