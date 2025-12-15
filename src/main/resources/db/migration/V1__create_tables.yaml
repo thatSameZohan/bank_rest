@@ -2,6 +2,12 @@ databaseChangeLog:
   - changeSet:
       id: create-cards-table
       author: your-name
+      preConditions:
+        onFail: MARK_RAN
+        onError: HALT
+        not:
+          tableExists:
+            tableName: cards
       changes:
         - createTable:
             tableName: cards
@@ -52,6 +58,12 @@ databaseChangeLog:
   - changeSet:
       id: create-users-table
       author: your-name
+      preConditions:
+        onFail: MARK_RAN
+        onError: HALT
+        not:
+          tableExists:
+            tableName: users
       changes:
         - createTable:
             tableName: users
@@ -87,6 +99,12 @@ databaseChangeLog:
   - changeSet:
       id: create-transfers-table
       author: your-name
+      preConditions:
+        onFail: MARK_RAN
+        onError: HALT
+        not:
+          tableExists:
+            tableName: transfers
       changes:
         - createTable:
             tableName: transfers
@@ -125,8 +143,14 @@ databaseChangeLog:
                     nullable: false
 
   - changeSet:
-      id: add-foreign-keys
+      id: add-fk-transfers-user
       author: your-name
+      preConditions:
+        onFail: MARK_RAN
+        onError: HALT
+        not:
+          foreignKeyConstraintExists:
+            foreignKeyName: fk_transfers_user
       changes:
         - addForeignKeyConstraint:
             constraintName: fk_transfers_user
@@ -136,6 +160,16 @@ databaseChangeLog:
             referencedColumnNames: id
             onDelete: NO ACTION
             onUpdate: NO ACTION
+  - changeSet:
+      id: add-fk-transfers-from-card
+      author: your-name
+      preConditions:
+        onFail: MARK_RAN
+        onError: HALT
+        not:
+          foreignKeyConstraintExists:
+            foreignKeyName: fk_transfers_from_card
+      changes:
         - addForeignKeyConstraint:
             constraintName: fk_transfers_from_card
             baseTableName: transfers
@@ -144,19 +178,39 @@ databaseChangeLog:
             referencedColumnNames: id
             onDelete: NO ACTION
             onUpdate: NO ACTION
-        - addForeignKeyConstraint:
-            constraintName: fk_transfers_to_card
-            baseTableName: transfers
-            baseColumnNames: to_card_id
-            referencedTableName: cards
-            referencedColumnNames: id
-            onDelete: NO ACTION
-            onUpdate: NO ACTION
-        - addForeignKeyConstraint:
-            constraintName: fk_cards_user
-            baseTableName: cards
-            baseColumnNames: user_id
-            referencedTableName: users
-            referencedColumnNames: id
-            onDelete: NO ACTION
-            onUpdate: NO ACTION
+  - changeSet:
+      id: add-fk-transfers-to-card
+      author: your-name
+      preConditions:
+        onFail: MARK_RAN
+        onError: HALT
+        not:
+          foreignKeyConstraintExists:
+            foreignKeyName: fk_transfers_to_card
+      changes:
+      - addForeignKeyConstraint:
+          constraintName: fk_transfers_to_card
+          baseTableName: transfers
+          baseColumnNames: to_card_id
+          referencedTableName: cards
+          referencedColumnNames: id
+          onDelete: NO ACTION
+          onUpdate: NO ACTION
+  - changeSet:
+      id: add-fk-cards-user
+      author: your-name
+      preConditions:
+        onFail: MARK_RAN
+        onError: HALT
+        not:
+          foreignKeyConstraintExists:
+            foreignKeyName: fk_cards_user
+      changes:
+      - addForeignKeyConstraint:
+          constraintName: fk_cards_user
+          baseTableName: cards
+          baseColumnNames: user_id
+          referencedTableName: users
+          referencedColumnNames: id
+          onDelete: NO ACTION
+          onUpdate: NO ACTION

@@ -17,6 +17,17 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
+/**
+ * Контроллер для управления пользователями и аутентификацией.
+ *
+ * <p>Обеспечивает следующие операции:</p>
+ * <ul>
+ *     <li>Регистрация, логин, обновление токенов и выход из системы (auth endpoints)</li>
+ *     <li>Админские операции: удаление, блокировка и активация пользователей</li>
+ * </ul>
+ *
+ * <p>Все методы подробно описаны через Swagger / OpenAPI аннотации.</p>
+ */
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/v1/api")

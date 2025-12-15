@@ -9,8 +9,26 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.Arrays;
 
+/**
+ * Конфигурация Swagger / OpenAPI для проекта.
+ *
+ * <p>Настраивает:
+ * <ul>
+ *     <li>Информацию о API (название, версия, описание)</li>
+ *     <li>Схему аутентификации через Bearer JWT токен</li>
+ *     <li>Глобальные требования безопасности для всех эндпоинтов</li>
+ * </ul>
+ * </p>
+ */
 @Configuration
 public class SwaggerConfig {
+
+    /**
+     * Настраивает OpenAPI спецификацию с информацией о проекте
+     * и глобальными требованиями безопасности.
+     *
+     * @return объект {@link OpenAPI} для SpringDoc
+     */
     @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
@@ -21,6 +39,11 @@ public class SwaggerConfig {
                 .security(Arrays.asList(new SecurityRequirement().addList("bearer-token")));
     }
 
+    /**
+     * Настраивает схему аутентификации Bearer JWT для Swagger UI.
+     *
+     * @return объект {@link SecurityScheme} для SpringDoc
+     */
     @Bean
     public SecurityScheme bearerAuth() {
         return new SecurityScheme()

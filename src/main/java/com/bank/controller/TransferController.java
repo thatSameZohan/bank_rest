@@ -25,7 +25,17 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-
+/**
+ * Контроллер для управления переводами между картами пользователя.
+ *
+ * <p>Обеспечивает следующие операции:</p>
+ * <ul>
+ *     <li>Переводы между картами одного пользователя</li>
+ *     <li>Просмотр всех переводов (только для администраторов)</li>
+ * </ul>
+ *
+ * <p>Все методы подробно документированы с помощью Swagger / OpenAPI аннотаций.</p>
+ */
 @RestController
 @RequestMapping("/v1/api/transfers")
 @RequiredArgsConstructor

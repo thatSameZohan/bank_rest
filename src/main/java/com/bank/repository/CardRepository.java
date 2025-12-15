@@ -18,7 +18,5 @@ public interface CardRepository extends JpaRepository<CardEntity, Long> {
 
     boolean existsByCardNumberEncrypted (String encrypted);
 
-    CardEntity save(CardEntity cardEntity);
-
     Optional<CardEntity> findByIdAndUserId(Long id, Long userId);
 }

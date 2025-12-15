@@ -22,6 +22,18 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Контроллер для управления банковскими картами.
+ *
+ * <p>Обеспечивает доступ к CRUD операциям карт для пользователей и администраторов:
+ * <ul>
+ *   <li>Пользователи: просмотр своих карт и баланса</li>
+ *   <li>Администраторы: создание, блокировка, активация, удаление карт, просмотр всех карт</li>
+ * </ul>
+ * </p>
+ *
+ * <p>API полностью документирован через Swagger / OpenAPI аннотации.</p>
+ */
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/v1/api/cards")

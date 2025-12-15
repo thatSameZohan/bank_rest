@@ -9,18 +9,48 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Base64;
 
+/**
+ * Конвертер атрибута номера карты для JPA.
+ *
+ * <p>Обеспечивает автоматическое шифрование номера карты при сохранении в базу данных
+ * и расшифровку при чтении из базы.</p>
+ *
+ * <p>Использует AES-шифрование с ключом, указанным в {@code application.yaml} через
+ * свойство {@code encryption.aes-key}.</p>
+ *
+ * <p>Пример использования:</p>
+ * <pre>
+ * &#64;Entity
+ * public class CardEntity {
+ *     &#64;Convert(converter = CardNumberAttributeConverter.class)
+ *     private String cardNumberEncrypted;
+ * }
+ * </pre>
+ */
 @Component
 @Converter
 public class CardNumberAttributeConverter implements AttributeConverter<String, String> {
 
     private static String AES_KEY;
 
+    /**
+     * Конструктор для внедрения ключа AES через Spring.
+     *
+     * @param aesKey ключ AES для шифрования и дешифрования
+     */
     public CardNumberAttributeConverter(@Value("${encryption.aes-key}") String aesKey) {
         AES_KEY = aesKey;
     }
 
     private static final String ALGO = "AES";
 
+    /**
+     * Шифрует номер карты для сохранения в базе данных.
+     *
+     * @param attribute номер карты (plain text)
+     * @return зашифрованный номер карты в формате Base64, или {@code null} если входное значение null
+     * @throws RuntimeException при ошибке шифрования
+     */
     @Override
     public String convertToDatabaseColumn(String attribute) {
         if (attribute == null) return null;
@@ -35,6 +65,13 @@ public class CardNumberAttributeConverter implements AttributeConverter<String, 
         }
     }
 
+    /**
+     * Расшифровывает номер карты при чтении из базы данных.
+     *
+     * @param dbData зашифрованный номер карты в формате Base64
+     * @return расшифрованный номер карты (plain text), или {@code null} если входное значение null
+     * @throws RuntimeException при ошибке дешифрования
+     */
     @Override
     public String convertToEntityAttribute(String dbData) {
         if (dbData == null) return null;

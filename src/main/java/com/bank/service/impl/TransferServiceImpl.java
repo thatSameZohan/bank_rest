@@ -17,7 +17,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Service
@@ -66,9 +65,9 @@ public class TransferServiceImpl implements TransferService {
 
         cardRepository.save(from);
         cardRepository.save(to);
-        transferRepository.save(transfer);
+        TransferEntity transferEntity=transferRepository.save(transfer);
 
-        return buildResponse(from, to, dto.amount());
+        return buildResponseDto(transferEntity);
     }
 
     @Override
@@ -81,27 +80,23 @@ public class TransferServiceImpl implements TransferService {
     }
 
     private TransferDto mapToDto(TransferEntity e) {
-        return new TransferDto(
-                e.getId(),
-                e.getUser(),
-                e.getFromCard(),
-                e.getToCard(),
-                e.getAmount(),
-                e.getCreatedAt()
-        );
+        return TransferDto.builder()
+                .id(e.getId())
+                .userId(e.getUser().getId())
+                .fromCardId(e.getFromCard().getId())
+                .toCardId(e.getToCard().getId())
+                .amount(e.getAmount())
+                .createdAt(e.getCreatedAt())
+                .build();
     }
-
-    private TransferResponseDto buildResponse(
-            CardEntity from, CardEntity to, BigDecimal amount) {
-
+    private TransferResponseDto buildResponseDto(TransferEntity e) {
         return TransferResponseDto.builder()
-                .fromCardMasked(from.getMaskedNumber())
-                .toCardMasked(to.getMaskedNumber())
-                .amount(amount)
-                .fromCardBalanceAfter(from.getBalance())
-                .toCardBalanceAfter(to.getBalance())
-                .timestamp(LocalDateTime.now())
-                .status("SUCCESS")
+                .fromCardMasked(e.getFromCard().getMaskedNumber())
+                .toCardMasked( e.getToCard().getMaskedNumber())
+                .amount(e.getAmount())
+                .fromCardBalanceAfter(e.getFromCard().getBalance())
+                .toCardBalanceAfter(e.getToCard().getBalance())
+                .timestamp(e.getCreatedAt())
                 .build();
     }
 }
