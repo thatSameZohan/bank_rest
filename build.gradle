@@ -33,25 +33,26 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.13.0")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.13.0")
     runtimeOnly 'org.postgresql:postgresql'
-//    testImplementation 'org.springframework.security:spring-security-test'
-//    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-//    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
-//    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.mockito:mockito-core:5.11.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.11.0'
+    testRuntimeOnly 'net.bytebuddy:byte-buddy-agent:1.17.8'
 }
 
-//tasks.named('test') {
-//    useJUnitPlatform()
-//}
+test {
+    useJUnitPlatform()
+    jvmArgs "-javaagent:${configurations.testRuntimeClasspath.find {it.name.contains('byte-buddy-agent') }}"
+}
 
 tasks.withType(Javadoc).configureEach {
     options.encoding = 'UTF-8'
     options.charSet = 'UTF-8'
     options.author = true
     options.version = true
-
     // чтобы сборка не падала из-за ошибок JavaDoc
     failOnError = false
-
     // Java 17
     options.addBooleanOption('html5', true)
 }
